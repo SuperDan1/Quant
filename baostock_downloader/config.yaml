@@ -1,0 +1,7 @@
+data_dir: "data"
+manifest_dir: "manifest"
+log_dir: "logs"
+rate_limit: 10
+retry_times: 3
+retry_delay: 1
+skip_threshold: 10
