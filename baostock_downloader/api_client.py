@@ -43,7 +43,7 @@ class BaostockApiClient:
         """获取 K 线数据，自动重试。失败超过 skip_threshold 次后抛出异常。"""
         fields = period.baostock_fields
         freq = period.baostock_freq
-        adjust = "2"  # 后复权
+        adjust = "3"  # 后复权
 
         failures = 0
         last_error = None
@@ -57,7 +57,7 @@ class BaostockApiClient:
                     start_date=start_date,
                     end_date=end_date,
                     frequency=freq,
-                    adjust=adjust,
+                    adjustflag=adjust,
                 )
 
                 if rs.error_code == "0":
@@ -142,15 +142,28 @@ class BaostockApiClient:
         return bars
 
     def get_stock_list(self, date_str: str) -> list[str]:
-        """获取指定日期的所有 A 股代码列表。"""
+        """获取指定日期的所有 A 股代码列表。如果当日非交易日，自动向前找最近交易日。"""
         self._semaphore.acquire()
         try:
-            rs = bs.query_all_stock(day=date_str)
-            stocks = []
-            while rs.next():
-                row = rs.get_row_data()
-                if len(row) >= 2 and row[1] and row[1] in ("1", "2"):  # 1=上交所, 2=深交所
-                    stocks.append(row[0])
+            stocks = self._fetch_stock_list(date_str)
+            if not stocks:
+                # 非交易日，向前最多找7天
+                for i in range(1, 8):
+                    from datetime import datetime, timedelta
+                    d = (datetime.strptime(date_str, "%Y-%m-%d") - timedelta(days=i)).strftime("%Y-%m-%d")
+                    stocks = self._fetch_stock_list(d)
+                    if stocks:
+                        break
             return stocks
         finally:
             self._semaphore.release()
+
+    def _fetch_stock_list(self, date_str: str) -> list[str]:
+        """实际执行查询。"""
+        rs = bs.query_all_stock(day=date_str)
+        stocks = []
+        while rs.next():
+            row = rs.get_row_data()
+            if len(row) >= 2 and row[1] and row[1] in ("1", "2"):  # 1=上交所, 2=深交所
+                stocks.append(row[0])
+        return stocks

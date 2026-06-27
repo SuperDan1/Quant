@@ -33,9 +33,9 @@ class TestDataStorage:
         self.storage.save_csv("000001.SZ", KlinePeriod.DAILY, bars1)
         self.storage.save_csv("000001.SZ", KlinePeriod.DAILY, bars2)
 
-        content = Path(self.storage.data_dir) / "daily" / "000001.SZ.csv".read_text()
+        content = (Path(self.storage.data_dir) / "daily" / "000001.SZ.csv").read_text()
         lines = content.strip().split("\n")
-        assert len(lines) == 2  # header + 2 data rows
+        assert len(lines) == 3  # header + 2 unique data rows (2024-01-01 deduped)
 
     def test_read_csv(self):
         bars = [

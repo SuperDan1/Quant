@@ -69,7 +69,7 @@ class DownloadManager:
             codes = [code]
         else:
             self.logger.info("Fetching stock list from BaoStock...")
-            codes = self.api.get_stock_list(start_date or run_date)
+            codes = self.api.get_stock_list(run_date)  # 用今天查股票列表，start_date 仅用于数据下载区间
             self.logger.info(f"Got {len(codes)} stocks")
 
         result.total = len(codes) * len(cycles)
